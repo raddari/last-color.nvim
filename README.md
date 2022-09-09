@@ -23,7 +23,7 @@ vim.cmd(('colorscheme %s'):format(theme))
 ```
 I personally don't lazy load my plugins, but I'm sure you could modify the snippet to account for that 😀
 
-## Example
+## Showcase
 Using the lua snippet above:
 
 ![last-color](https://user-images.githubusercontent.com/25364469/189385514-563ca684-41c9-42db-a2a6-12921f4f3095.gif)
