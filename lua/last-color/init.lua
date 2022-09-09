@@ -4,21 +4,26 @@ local uv = vim.loop
 local M = {}
 local cache_path = vim.fn.stdpath('data') .. '/last_color'
 
+--- Open the file where the colorscheme name is saved.
+--- See `:h uv.fs_open()` for a better description of parameters.
+---
+--- @param mode string r for read, w for write
+--- @return integer|nil fd
 local open_cache_file = function(mode)
-  -- 438(10) == 666(8) [owner/group/others can read/write]
+  --- 438(10) == 666(8) [owner/group/others can read/write]
   local flags = 438
   local fd = uv.fs_open(cache_path, mode, flags)
   return fd
 end
 
 --- Creates the autocommand which remembers when a colorscheme is changed,
---- along with the ex-command 'LastColor'.
+--- along with the Ex command 'LastColor'.
 --- This is automatically called when the plugin is loaded.
 M.setup = function()
   api.nvim_create_autocmd('ColorScheme', {
     group = api.nvim_create_augroup('last-color', { clear = true }),
     pattern = '*',
-    desc = 'Cache colorscheme when changed',
+    desc = 'Save colorscheme name to filesystem when changed',
     callback = function(info)
       local fd = open_cache_file('w')
       local colorscheme = info.match .. '\n'
@@ -32,6 +37,9 @@ M.setup = function()
   end, { desc = 'Prints the last color used in :colorscheme' })
 end
 
+--- Reads the cache to find the name of the last `:colorscheme` argument.
+---
+--- @return string|nil colorscheme
 M.recall = function()
   local fd = open_cache_file('r')
   if not fd then
