@@ -12,7 +12,10 @@ local cache_path = vim.fn.stdpath('data') .. '/last_color'
 local open_cache_file = function(mode)
   --- 438(10) == 666(8) [owner/group/others can read/write]
   local flags = 438
-  local fd = uv.fs_open(cache_path, mode, flags)
+  local fd, err = uv.fs_open(cache_path, mode, flags)
+  if err then
+    vim.api.nvim_notify(('Error opening last_color cache file:\n\n%s'):format(err), vim.log.levels.ERROR, {})
+  end
   return fd
 end
 
@@ -26,6 +29,12 @@ M.setup = function()
     desc = 'Save colorscheme name to filesystem when changed',
     callback = function(info)
       local fd = open_cache_file('w')
+      if not fd then
+        -- delete the autocommand to prevent further error notifications
+        -- if we can't open the cache file
+        return true
+      end
+
       local colorscheme = info.match .. '\n'
       assert(uv.fs_write(fd, colorscheme, -1))
       assert(uv.fs_close(fd))
