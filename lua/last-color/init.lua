@@ -28,6 +28,18 @@ M.setup = function()
     pattern = '*',
     desc = 'Save colorscheme name to filesystem when changed',
     callback = function(info)
+      local new_scheme = info.match
+      local valid_schemes = vim.fn.getcompletion('', 'color')
+      -- fix for #2
+      if not vim.tbl_contains(valid_schemes, new_scheme) then
+        vim.api.nvim_notify(
+          ('tried to save non-existent colorscheme: %s'):format(new_scheme),
+          vim.log.levels.DEBUG,
+          { title = '[last-color.nvim]' }
+        )
+        return nil
+      end
+
       local fd = open_cache_file('w')
       if not fd then
         -- delete the autocommand to prevent further error notifications
@@ -35,8 +47,7 @@ M.setup = function()
         return true
       end
 
-      local colorscheme = info.match .. '\n'
-      assert(uv.fs_write(fd, colorscheme, -1))
+      assert(uv.fs_write(fd, ('%s\n'):format(new_scheme), -1))
       assert(uv.fs_close(fd))
     end,
   })
