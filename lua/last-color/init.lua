@@ -7,22 +7,29 @@ local M = {}
 local open_cache_file = function(mode)
   -- 438(10) == 666(8) [owner/group/others can read/write]
   local flags = 438
-  local fd = assert(uv.fs_open(cache_file, mode, flags))
-  return fd
+  return uv.fs_open(cache_file, mode, flags)
 end
 
 local read_cache_file = function()
-  local fd = open_cache_file('r')
+  local fd, err_name, err_msg = open_cache_file('r')
+  if not fd then
+    if err_name == 'ENOENT' then
+      -- cache never written: ok, :colorscheme never executed
+      return nil
+    end
+    error(string.format('%s: %s', err_name, err_msg))
+  end
+
   local stat = assert(uv.fs_fstat(fd))
   local data = assert(uv.fs_read(fd, stat.size, -1))
   assert(uv.fs_close(fd))
 
-  local colorscheme = string(data):gsub('[\n\r]', '')
+  local colorscheme = tostring(data):gsub('[\n\r]', '')
   return colorscheme
 end
 
 local write_cache_file = function(colorscheme)
-  local fd = open_cache_file('w')
+  local fd = assert(open_cache_file('w'))
   assert(uv.fs_write(fd, string.format('%s\n', colorscheme), -1))
   assert(uv.fs_close(fd))
 end
