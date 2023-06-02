@@ -1,4 +1,3 @@
-local api = vim.api
 local uv = vim.loop
 local cache_file = string.format('%s/last-color', vim.fn.stdpath('data'))
 
@@ -45,10 +44,10 @@ end
 --- with the Ex command 'LastColor'. This is automatically called when the
 --- plugin is loaded.
 M.setup = function()
-  api.nvim_create_autocmd('ColorScheme', {
-    group = api.nvim_create_augroup('last-color', { clear = true }),
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    group = vim.api.nvim_create_augroup('last-color', { clear = true }),
     pattern = '*',
-    desc = 'Save colorscheme name to filesystem when changed',
+    desc = 'Cache colorscheme name to disk on change',
     callback = function(info)
       local new_scheme = info.match
       local valid_schemes = vim.fn.getcompletion('', 'color')
@@ -66,7 +65,7 @@ M.setup = function()
     end,
   })
 
-  api.nvim_create_user_command('LastColor', function(_)
+  vim.api.nvim_create_user_command('LastColor', function(_)
     print(M.recall())
   end, { desc = 'Prints the cached colorscheme' })
 end
