@@ -1,5 +1,5 @@
 local uv = vim.loop
-local cache_file = string.format('%s/last-color', vim.fn.stdpath('data'))
+local cache_file = vim.fn.stdpath('data') .. '/last-color'
 
 local M = {}
 
@@ -16,7 +16,7 @@ local read_cache_file = function()
       -- cache never written: ok, :colorscheme never executed
       return nil
     end
-    error(string.format('%s: %s', err_name, err_msg))
+    error(('%s: %s'):format(err_name, err_msg))
   end
 
   local stat = assert(uv.fs_fstat(fd))
@@ -29,7 +29,7 @@ end
 
 local write_cache_file = function(colorscheme)
   local fd = assert(open_cache_file('w'))
-  assert(uv.fs_write(fd, string.format('%s\n', colorscheme), -1))
+  assert(uv.fs_write(fd, colorscheme .. '\n', -1))
   assert(uv.fs_close(fd))
 end
 
@@ -58,7 +58,7 @@ M.setup = function()
 
       local ok, result = pcall(write_cache_file, new_scheme)
       if not ok then
-        vim.api.nvim_err_writeln(string.format('cannot write to cache file: %s', result))
+        vim.api.nvim_err_writeln('cannot write to cache file: ' .. result)
         -- delete the autocommand to prevent further error notifications
         return true
       end
