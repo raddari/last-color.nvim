@@ -33,11 +33,19 @@ local write_cache_file = function(colorscheme)
   assert(uv.fs_close(fd))
 end
 
+local is_valid_scheme = function(colorscheme)
+  local valid_schemes = vim.fn.getcompletion('', 'color')
+  return vim.tbl_contains(valid_schemes, colorscheme)
+end
+
 --- Read the cached colorscheme from disk.
 --- @return string|nil colorscheme
 M.recall = function()
   local ok, result = pcall(read_cache_file)
-  return ok and result or nil
+  if ok and is_valid_scheme(result) then
+    return result
+  end
+  return nil
 end
 
 --- Creates the autocommand which saves the last ':colorscheme' to disk, along
@@ -50,9 +58,7 @@ M.setup = function()
     desc = 'Cache colorscheme name to disk on change',
     callback = function(info)
       local new_scheme = info.match
-      local valid_schemes = vim.fn.getcompletion('', 'color')
-      -- fix for #2
-      if not vim.tbl_contains(valid_schemes, new_scheme) then
+      if not is_valid_scheme(new_scheme) then
         return nil
       end
 
