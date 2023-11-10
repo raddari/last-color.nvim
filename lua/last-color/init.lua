@@ -3,14 +3,18 @@ local cache_file = string.format('%s/last-color', vim.fn.stdpath('data'))
 
 local M = {}
 
-local open_cache_file = function(mode)
+---@param mode string
+---@param slot string|nil
+local open_cache_file = function(mode, slot)
+  local filename = slot and ('%s.%s'):format(cache_file, slot) or cache_file
   -- 438(10) == 666(8) [owner/group/others can read/write]
   local flags = 438
-  return uv.fs_open(cache_file, mode, flags)
+  return uv.fs_open(filename, mode, flags)
 end
 
-local read_cache_file = function()
-  local fd, err_name, err_msg = open_cache_file('r')
+---@param slot string|nil
+local read_cache_file = function(slot)
+  local fd, err_name, err_msg = open_cache_file('r', slot)
   if not fd then
     if err_name == 'ENOENT' then
       -- cache never written: ok, :colorscheme never executed
@@ -27,17 +31,30 @@ local read_cache_file = function()
   return colorscheme
 end
 
-local write_cache_file = function(colorscheme)
-  local fd = assert(open_cache_file('w'))
+---@param colorscheme string name of colorscheme
+---@param slot string|nil name of slot to use
+local write_cache_file = function(colorscheme, slot)
+  local fd = assert(open_cache_file('w', slot))
   assert(uv.fs_write(fd, string.format('%s\n', colorscheme), -1))
   assert(uv.fs_close(fd))
 end
 
+---@type string|nil name of slot in use
+M.current_slot = nil
+
 --- Read the cached colorscheme from disk.
 --- @return string|nil colorscheme
 M.recall = function()
-  local ok, result = pcall(read_cache_file)
+  local ok, result = pcall(read_cache_file, M.current_slot)
   return ok and result or nil
+end
+
+---Sets the current slot to read/write colorscheme to.
+---@return string|nil slot previous slot in use
+M.slot = function(name)
+  local old = M.current_slot
+  M.current_slot = name
+  return old
 end
 
 --- Creates the autocommand which saves the last ':colorscheme' to disk, along
@@ -56,7 +73,7 @@ M.setup = function()
         return nil
       end
 
-      local ok, result = pcall(write_cache_file, new_scheme)
+      local ok, result = pcall(write_cache_file, new_scheme, M.current_slot)
       if not ok then
         vim.api.nvim_err_writeln(string.format('cannot write to cache file: %s', result))
         -- delete the autocommand to prevent further error notifications
