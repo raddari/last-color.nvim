@@ -17,9 +17,9 @@ None. It'll call `setup` itself when loaded.
 ## Usage
 Dead simple. I use the snippet below in my `init.lua` to automatically use the last theme. There's also an Ex command; `:LastColor`.
 ```lua
--- kanagawa as a backup, `recall()` can return `nil`.
-local theme = require('last-color').recall() or 'kanagawa'
-vim.cmd(('colorscheme %s'):format(theme))
+-- default theme as a backup, `recall()` can return `nil`.
+local theme = require('last-color').recall() or 'default'
+vim.cmd.colorscheme(theme)
 ```
 I personally don't lazy load my plugins, but I'm sure you could modify the snippet to account for that 😀
 
